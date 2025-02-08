@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List</title>
+    <title>To-Do List & Rentabilité</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -21,6 +22,7 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 300px;
             text-align: center;
+            margin-bottom: 20px;
         }
         ul {
             list-style: none;
@@ -49,6 +51,9 @@
             font-size: 20px;
             margin-bottom: 10px;
         }
+        canvas {
+            max-width: 400px;
+        }
     </style>
 </head>
 <body>
@@ -59,7 +64,20 @@
         <button onclick="addTask()">Ajouter</button>
         <ul id="taskList"></ul>
     </div>
-
+    
+    <div class="container">
+        <h2>Mes Achats</h2>
+        <input type="text" id="achatNom" placeholder="Nom de l'achat">
+        <input type="number" id="achatPrix" placeholder="Prix">
+        <button onclick="ajouterAchat()">Ajouter</button>
+        <ul id="achatList"></ul>
+    </div>
+    
+    <div class="container">
+        <h2>Rentabilité</h2>
+        <canvas id="rentabiliteChart"></canvas>
+    </div>
+    
     <script>
         function updateClock() {
             let now = new Date();
@@ -98,6 +116,56 @@
             li.appendChild(deleteButton);
             document.getElementById("taskList").appendChild(li);
             taskInput.value = "";
+        }
+
+        let achats = [];
+        function ajouterAchat() {
+            let nom = document.getElementById("achatNom").value.trim();
+            let prix = parseFloat(document.getElementById("achatPrix").value);
+            if (nom === "" || isNaN(prix)) return;
+            
+            achats.push({ nom, prix });
+            afficherAchats();
+            mettreAJourGraphique();
+            document.getElementById("achatNom").value = "";
+            document.getElementById("achatPrix").value = "";
+        }
+
+        function afficherAchats() {
+            let achatList = document.getElementById("achatList");
+            achatList.innerHTML = "";
+            achats.forEach((achat, index) => {
+                let li = document.createElement("li");
+                li.textContent = `${achat.nom} - ${achat.prix}€`;
+                let deleteButton = document.createElement("button");
+                deleteButton.textContent = "X";
+                deleteButton.onclick = function() {
+                    achats.splice(index, 1);
+                    afficherAchats();
+                    mettreAJourGraphique();
+                };
+                li.appendChild(deleteButton);
+                achatList.appendChild(li);
+            });
+        }
+
+        let ctx = document.getElementById("rentabiliteChart").getContext("2d");
+        let rentabiliteChart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: [],
+                datasets: [{
+                    label: "Prix en €",
+                    data: [],
+                    backgroundColor: "blue"
+                }]
+            }
+        });
+
+        function mettreAJourGraphique() {
+            rentabiliteChart.data.labels = achats.map(a => a.nom);
+            rentabiliteChart.data.datasets[0].data = achats.map(a => a.prix);
+            rentabiliteChart.update();
         }
     </script>
 </body>
