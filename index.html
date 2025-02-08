@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>To-Do List</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -61,6 +62,10 @@
     </div>
 
     <script>
+        const SUPABASE_URL = "https://xyzcompany.supabase.co"; // Remplace par ton URL Supabase
+        const SUPABASE_ANON_KEY = "your-anon-key"; // Remplace par ta clé API anonyme
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         function updateClock() {
             let now = new Date();
             now.setHours(now.getHours() + 1); // GMT+1
@@ -72,33 +77,51 @@
         setInterval(updateClock, 1000);
         updateClock();
 
-        function addTask() {
+        async function loadTasks() {
+            document.getElementById("taskList").innerHTML = "";
+            let { data: tasks, error } = await supabase.from("tasks").select("*").order("created_at", { ascending: true });
+            if (error) {
+                console.error("Erreur lors du chargement des tâches :", error);
+                return;
+            }
+            tasks.forEach(task => {
+                let li = document.createElement("li");
+                let checkbox = document.createElement("input");
+                checkbox.type = "checkbox";
+                checkbox.checked = task.completed;
+                checkbox.onchange = async function() {
+                    li.classList.toggle("completed", this.checked);
+                    await supabase.from("tasks").update({ completed: this.checked }).eq("id", task.id);
+                };
+                let span = document.createElement("span");
+                span.textContent = task.text;
+                let deleteButton = document.createElement("button");
+                deleteButton.textContent = "X";
+                deleteButton.onclick = async function() {
+                    await supabase.from("tasks").delete().eq("id", task.id);
+                    li.remove();
+                };
+                li.appendChild(checkbox);
+                li.appendChild(span);
+                li.appendChild(deleteButton);
+                document.getElementById("taskList").appendChild(li);
+            });
+        }
+
+        async function addTask() {
             let taskInput = document.getElementById("taskInput");
             let taskText = taskInput.value.trim();
             if (taskText === "") return;
-            
-            let li = document.createElement("li");
-            let checkbox = document.createElement("input");
-            checkbox.type = "checkbox";
-            checkbox.onchange = function() {
-                li.classList.toggle("completed", this.checked);
-            };
-            
-            let span = document.createElement("span");
-            span.textContent = taskText;
-            
-            let deleteButton = document.createElement("button");
-            deleteButton.textContent = "X";
-            deleteButton.onclick = function() {
-                li.remove();
-            };
-            
-            li.appendChild(checkbox);
-            li.appendChild(span);
-            li.appendChild(deleteButton);
-            document.getElementById("taskList").appendChild(li);
+            let { data, error } = await supabase.from("tasks").insert([{ text: taskText, completed: false }]);
+            if (error) {
+                console.error("Erreur lors de l'ajout de la tâche :", error);
+                return;
+            }
             taskInput.value = "";
+            loadTasks();
         }
+
+        document.addEventListener("DOMContentLoaded", loadTasks);
     </script>
 </body>
 </html>
