@@ -20,6 +20,7 @@
             border-radius: 10px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             width: 300px;
+            text-align: center;
         }
         ul {
             list-style: none;
@@ -44,10 +45,15 @@
             cursor: pointer;
             padding: 5px;
         }
+        #clock {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <div id="clock"></div>
         <h2>To-Do List</h2>
         <input type="text" id="taskInput" placeholder="Ajouter une tâche...">
         <button onclick="addTask()">Ajouter</button>
@@ -55,6 +61,17 @@
     </div>
 
     <script>
+        function updateClock() {
+            let now = new Date();
+            now.setHours(now.getHours() + 1); // GMT+1
+            let hours = String(now.getHours()).padStart(2, '0');
+            let minutes = String(now.getMinutes()).padStart(2, '0');
+            let seconds = String(now.getSeconds()).padStart(2, '0');
+            document.getElementById("clock").textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
         function addTask() {
             let taskInput = document.getElementById("taskInput");
             let taskText = taskInput.value.trim();
